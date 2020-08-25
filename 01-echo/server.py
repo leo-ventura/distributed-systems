@@ -33,7 +33,7 @@ def serve():
             logging.info('Empty response received, closing connection')
             break
 
-        logging.debug(f'Client sent: {response}')
+        logging.debug(f'Client sent: {response.decode('utf-8')}')
 
         # echo it back to the client
         cSock.send(response)
