@@ -25,19 +25,18 @@ def serve():
     logging.info(f'Accepted connection from: {addr}')
 
     # deal with information received from this connection
-    while True:
-        response = cSock.recv(1024)
+    # read until an empty response is received
+    # ps: python 3.8 or above is required
+    while response := cSock.recv(1024):
 
-        # empty response
-        if not response:
-            logging.info('Empty response received, closing connection')
-            break
-
+        # decode byte encoded response
         decodedResponse = response.decode('utf-8')
         logging.debug(f'Client sent: {decodedResponse}')
 
         # echo it back to the client
         cSock.send(response)
+
+    logging.info('Empty response received, closing connection')
 
     # close client socket descriptor
     cSock.close()
