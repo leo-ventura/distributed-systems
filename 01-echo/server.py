@@ -25,9 +25,10 @@ def serve():
     logging.info(f'Accepted connection from: {addr}')
 
     # deal with information received from this connection
-    # read until an empty response is received
-    # ps: python 3.8 or above is required
-    while response := cSock.recv(1024):
+    while True:
+        response = cSock.recv(1024)
+        if not response:
+            break
 
         # decode byte encoded response
         decodedResponse = response.decode('utf-8')
