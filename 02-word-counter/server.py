@@ -7,6 +7,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 from fileReader import readFile
 
 def formatDict(dictionary):
+    logging.debug('Formatting payload response')
     formattedDict = ""
     for word in dictionary:
         formattedDict += f'{word}: {dictionary[word]}\n'
@@ -14,6 +15,7 @@ def formatDict(dictionary):
 
 def topOccurrences(dictionary, N):
     """ Returns top N occurrences of words in `dictionary` """
+    logging.debug(f'Selecting top {N} words ordered by occurrences')
     return {k: v for k, v in sorted(dictionary.items(),
         key=lambda item: item[1], reverse=True)[:N]}
 
@@ -44,10 +46,12 @@ def countWords(filesString, N=10):
     for file in files:
         try:
             # read content of file
+            logging.debug(f'Trying to read content of {file}')
             content = readFile(file)
         except Exception as e:
             return str(e)
 
+        logging.debug('Parsing content')
         wordCounter = parseContent(wordCounter, content)
 
     wordCounter = topOccurrences(wordCounter, N)
@@ -89,7 +93,9 @@ def serve():
             logging.debug(f'Client sent: {decodedResponse}')
 
             # count words
+            logging.info('Begin counting words')
             wordCountPayload = countWords(decodedResponse)
+            logging.info('Finished counting words')
 
             # add 20 equals signs to denote end of server response
             payload = wordCountPayload + '='*20
@@ -97,7 +103,8 @@ def serve():
             # byte encode payload
             payload = payload.encode('utf-8')
 
-            # echo it back to the client
+            # send payload to the client
+            logging.info('Sending payload back to client')
             cSock.send(payload)
 
         logging.info('Empty response received, closing connection')
