@@ -1,4 +1,4 @@
-from colors import colors
+from util import colors
 
 def readFile(filename):
     """ Read file and returns its content as a list """
