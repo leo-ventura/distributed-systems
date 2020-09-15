@@ -13,12 +13,10 @@ def serve():
     listenerAddress = parseArguments()
 
     # setup server socket
-    # sock = initSocket(listenerAddress)
     sock = ServerSocket(listenerAddress)
     stdin = StdinWrapper()
 
     # input entries
-    # readersDescriptors = [sock, sys.stdin]
     readersDescriptors = [sock, stdin]
     writersDescriptors = []
     exceptionsDescriptors = []
@@ -26,9 +24,9 @@ def serve():
     # clients created throughout the execution
     clients = []
 
-    # keep socket descriptor open as long as server receives new connections
+    # keep socket descriptor open as long as it still receives new connections
     while True:
-        # get descriptores ready for interaction
+        # get descriptors ready for interaction
         readersReady, _, _ = select(readersDescriptors, writersDescriptors,
             exceptionsDescriptors)
 
