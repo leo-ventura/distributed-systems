@@ -34,7 +34,7 @@ class ServerSocket:
         logging.info('Listening...')
         sock.listen(maxConnnections)
 
-        sock.settimeout(False)
+        sock.setblocking(False)
         return sock
 
     def _handleNewClientConnection(self):
