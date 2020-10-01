@@ -1,7 +1,7 @@
 import logging
 
 from socket import socket, AF_INET, SOCK_STREAM
-from threading import Thread, Lock, current_thread
+from threading import Thread, Lock, Condition, current_thread
 
 from chat import protocol
 from chat.message.socket_reader import read_response
@@ -13,6 +13,7 @@ import chat.message.builder as builder
 class ServerSocket(ListenerSocket):
     def ready(self, open_clients, nicknames):
         self._lock = Lock()
+        self._can_read_response = Condition()
         self._threads = {}
         self._shared_data = ""
         # spawn new process to handle new client connection
@@ -28,6 +29,14 @@ class ServerSocket(ListenerSocket):
         c_sock, addr = self._sock.accept()
         logging.info(f'Accepted connection from: {addr}')
 
+        self._keep_alive(c_sock, nicknames)
+
+        logging.info(f'Empty response from {addr} received, closing connection')
+
+        # close client socket descriptor
+        c_sock.close()
+
+    def _keep_alive(self, c_sock, nicknames):
         # deal with information received from this connection
         while True:
             try:
@@ -42,15 +51,12 @@ class ServerSocket(ListenerSocket):
 
             self._handle_response(c_sock, nicknames, response)
 
-        logging.info(f'Empty response from {addr} received, closing connection')
-
-        # close client socket descriptor
-        c_sock.close()
 
     def _handle_response(self, c_sock, nicknames, response):
         if protocol.first_interaction in response:
             self._handle_first_interaction(c_sock, nicknames, response[protocol.nick])
         elif protocol.action_field in response:
+            # user requested some type of action
             if protocol.action.LIST_CLIENTS_FIELD in response[protocol.action_field]:
                 self._handle_list_clients(c_sock, nicknames)
             elif protocol.action.CONNECT_CLIENT_FIELD in response[protocol.action_field]:
@@ -58,9 +64,12 @@ class ServerSocket(ListenerSocket):
         elif protocol.connection.ip in response and protocol.connection.port in response:
             # p2p connection has been created
             # put data in the shared memory so that the main thread can pick it up
-            self._lock.acquire()
-            self._shared_data = response
-            self._lock.release()
+            with self._can_read_response:
+                self._shared_data = response
+                self._can_read_response.notify()
+
+            # go back to the keep alive loop
+            self._keep_alive(c_sock, nicknames)
 
     def _handle_list_clients(self, c_sock, nicknames):
         logging.info(f'Send active clients list')
@@ -93,14 +102,17 @@ class ServerSocket(ListenerSocket):
             # TODO handle not active message response
 
     def _read_response_from_shared_memory(self, nickname):
-        while True:
-            with self._lock:
-                if self._shared_data:
-                    break
+        # while True:
+            # with self._lock:
+            #     if self._shared_data:
+            #         break
             # self._lock.release()
             # wait for 10 seconds, then check if self._shared_data is available
-            self._threads[nickname].join(timeout=1.0)
-            logging.debug(f'Shared data after join: {self._shared_data}')
+            # self._threads[nickname].join(timeout=1.0)
+            # logging.debug(f'Shared data after join: {self._shared_data}')
+        logging.debug(f'Shared data before wait join: {self._shared_data}')
+        with self._can_read_response:
+            self._can_read_response.wait()
 
         # self._lock.acquire()
         with self._lock:
