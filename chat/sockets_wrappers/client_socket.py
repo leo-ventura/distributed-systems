@@ -1,19 +1,19 @@
 import logging
 
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM, MSG_WAITALL
 from threading import Thread
 
 from chat import protocol
 from chat.util import colors, shell_print, print_message_chat, print_received_message, print_nicknames
-from chat.message.socket_reader import read_response
+from chat.message.socket_reader import read_response, SocketClosedError
 
 from chat.sockets_wrappers.client_server_socket import ClientServerSocket
 
 import chat.message.builder as builder
 
 class ClientSocket:
-    def __init__(self, address):
-        self._nick = ""
+    def __init__(self, address, nickname=""):
+        self._nick = nickname
 
         # create socket descriptor
         self._sock = socket(AF_INET, SOCK_STREAM)
@@ -34,20 +34,31 @@ class ClientSocket:
             and response[protocol.role_field] == protocol.role.server):
             self._create_p2p_server(open_connections)
         else:
-            logging.debug(f'Received request from the server, but request was: {response}')
+            logging.debug(f'Received unexpected request from the server: {response}')
         return False, ""
 
     def first_interaction(self):
-        nickname_payload = setup_nickname()
+        try:
+            nickname_payload = setup_nickname()
+        except EOFError:
+            # no nickname provided, close connection
+            self.close()
+
+        # send nickname payload
         self._sock.sendall(nickname_payload)
 
-        response = read_response(self._sock)
-        if response[protocol.status.ok]:
-            self._nick = response[protocol.nick]
-            print(f"{colors.OKBLUE}Nickname criado com sucesso!{colors.ENDC}")
+        try:
+            response = read_response(self._sock)
+        except SocketClosedError:
+            print("Socket fechado, tente novamente")
         else:
-            print(f"{colors.FAIL}Nickname já existente, tente novamente{colors.ENDC}")
-            self.first_interaction()
+            if response[protocol.status.ok]:
+                logging.debug(f'Setting nickname as {response[protocol.nick]}')
+                self._nick = response[protocol.nick]
+                print(f"{colors.OKGREEN}Nickname criado com sucesso!{colors.ENDC}")
+            else:
+                print(f"{colors.FAIL}Nickname já existente, tente novamente{colors.ENDC}")
+                self.first_interaction()
 
     def _create_p2p_server(self, open_connections):
         logging.debug(f'Creating p2p server')
@@ -70,8 +81,12 @@ class ClientSocket:
         if action == protocol.action.LIST_CLIENTS:
             self._send_list_clients_request()
         elif action == protocol.action.CONNECT_CLIENT:
-            nickname = command_arguments[1]
-            self._send_connect_client_request(open_connections, nickname)
+            try:
+                nickname = command_arguments[1]
+            except IndexError:
+                print("Nenhum nickname fornecido, tente novamente")
+            else:
+                self._send_connect_client_request(open_connections, nickname)
         else:
             print(f"{colors.FAIL}Comando inválido, tente novamente{colors.ENDC}")
 
@@ -96,7 +111,7 @@ class ClientSocket:
     def _create_p2p_client(self, open_connections, response):
         address = (response[protocol.connection.ip], response[protocol.connection.port])
 
-        client_p2p_socket = ClientSocket(address)
+        client_p2p_socket = ClientSocket(address, nickname=self._nick)
 
         connection = Thread(target=client_p2p_socket.interact_p2p)
         connection.start()
@@ -114,10 +129,8 @@ class ClientSocket:
         logging.debug(f"Sending {msg} from {self._nick}")
 
         payload = builder.build_message_payload(self._nick, msg)
-        self._sock.sendall(payload)
+        self._sock.sendall(payload, MSG_WAITALL)
 
-        response = read_response(self._sock)
-        print_received_message(response[protocol.nick], response[protocol.message])
         self.close()
 
 def setup_nickname():
@@ -125,7 +138,7 @@ def setup_nickname():
     return builder.build_nickname_payload(nickname)
 
 def get_user_nickname():
-    print("Entre com um nome de usuário para sua sessão atual no CD")
+    print(f"{colors.OKBLUE}Entre com um nome de usuário para sua sessão atual{colors.ENDC}")
     shell_print()
 
     nickname = input()
