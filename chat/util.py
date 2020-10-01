@@ -17,10 +17,11 @@ def shell_print():
     print("> ", end="", flush=True)
 
 def print_message_chat():
-    print("# ", end="", flush=True)
+    print("#>", end="", flush=True)
 
 def print_received_message(nickname, message):
-    print(f'[@{nickname}]: {message}')
+    print(f'{colors.OKBLUE}[@{nickname}]: {message}{colors.ENDC}')
+    shell_print()
 
 def print_nicknames(nicknames):
     if nicknames:
@@ -29,7 +30,7 @@ def print_nicknames(nicknames):
             print(f'[{index}]: @{key}')
             index += 1
     else:
-        print("Nenhum usuário ativo")
+        print(f"{colors.WARNING}Nenhum usuário ativo{colors.ENDC}")
 
 def setup_logging(level=logging.DEBUG):
     logging.basicConfig(format=LOG_FORMAT, level=level)
