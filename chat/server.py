@@ -21,9 +21,9 @@ def serve():
     stdin = ServerStdinWrapper()
 
     # input entries
-    readersDescriptors = [sock, stdin]
-    writersDescriptors = []
-    exceptionsDescriptors = []
+    readers_descriptors = [sock, stdin]
+    writers_descriptors = []
+    exceptions_descriptors = []
 
     # clients created throughout the execution
     clients = []
@@ -34,11 +34,11 @@ def serve():
     # keep socket descriptor open as long as it still receives new connections
     while True:
         # get descriptors ready for interaction
-        readersReady, _, _ = select(readersDescriptors, writersDescriptors,
-            exceptionsDescriptors)
+        readers_ready, _, _ = select(readers_descriptors, writers_descriptors,
+            exceptions_descriptors)
 
-        logging.debug(f'Descriptors ready for reading: {readersReady}')
-        for reader in readersReady:
+        logging.debug(f'Descriptors ready for reading: {readers_ready}')
+        for reader in readers_ready:
             clientsClosed = reader.ready(clients, nicknames)
 
         if clientsClosed:

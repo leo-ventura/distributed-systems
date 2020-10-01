@@ -11,10 +11,10 @@ class SocketClosedError(Exception):
 def read_response(sock):
     logging.debug(f'Reading response using {sock.getsockname()}')
     # first 4 bytes will always be the size of the payload to be read
+    logging.debug('Waiting at sock.recv(4)')
+    payload_size = sock.recv(4)
+    logging.debug(f'Payload size: {payload_size}')
     try:
-        logging.debug('Waiting at sock.recv(4)')
-        payload_size = sock.recv(4)
-        logging.debug(f'Payload size: {payload_size}')
         bytes_to_read = decode_size(payload_size)
         logging.debug(f'Bytes to read: {bytes_to_read}')
     except struct.error:

@@ -38,10 +38,12 @@ def connect():
     usage()
 
     sock = ClientSocket(address)
+
+    # start first interaction
+    # handle nickname setup
     sock.first_interaction()
 
     # setup sockets
-    logging.debug('Creating client stdin wrapper')
     stdin = ClientStdinWrapper()
 
     # input entries
