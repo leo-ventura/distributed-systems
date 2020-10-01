@@ -11,11 +11,14 @@ from chat.sockets_wrappers.listener_socket import ListenerSocket
 import chat.message.builder as builder
 
 class ServerSocket(ListenerSocket):
-    def ready(self, open_clients, nicknames):
+    def __init__(self, address, max_connections=5):
+        super().__init__(address, max_connections)
         self._lock = Lock()
         self._can_read_response = Condition()
         self._threads = {}
         self._shared_data = ""
+
+    def ready(self, open_clients, nicknames):
         # spawn new process to handle new client connection
         client = Thread(target=self._handle_new_client_connection, args=(nicknames,))
         client.start()
@@ -73,6 +76,7 @@ class ServerSocket(ListenerSocket):
 
     def _handle_list_clients(self, c_sock, nicknames):
         logging.info(f'Send active clients list')
+        self._remove_inactive_clients(nicknames)
         payload = builder.build_list_clients_payload(nicknames)
         c_sock.sendall(payload)
 
@@ -102,24 +106,14 @@ class ServerSocket(ListenerSocket):
             # TODO handle not active message response
 
     def _read_response_from_shared_memory(self, nickname):
-        # while True:
-            # with self._lock:
-            #     if self._shared_data:
-            #         break
-            # self._lock.release()
-            # wait for 10 seconds, then check if self._shared_data is available
-            # self._threads[nickname].join(timeout=1.0)
-            # logging.debug(f'Shared data after join: {self._shared_data}')
         logging.debug(f'Shared data before wait join: {self._shared_data}')
         with self._can_read_response:
             self._can_read_response.wait()
 
-        # self._lock.acquire()
         with self._lock:
             logging.debug(f'Shared data after releasing join: {self._shared_data}')
             response = self._shared_data
             self._share_data = ""
-        # self._lock.release()
 
         return response
 
@@ -135,7 +129,17 @@ class ServerSocket(ListenerSocket):
         c_sock.sendall(status_payload)
 
     def _atomic_update_nickname(self, nicknames, nickname, c_sock):
-        self._lock.acquire()
-        nicknames[nickname] = c_sock
-        self._threads[nickname] = current_thread()
-        self._lock.release()
+        with self._lock:
+            logging.debug(f'Adding {nickname}')
+            nicknames[nickname] = c_sock
+            self._threads[nickname] = current_thread()
+
+            logging.debug(f'Nicknames: {nicknames}')
+            logging.debug(f'Threads: {self._threads}')
+
+    def _remove_inactive_clients(self, nicknames):
+        logging.debug(f'Threads: {self._threads.keys()}')
+        for nickname in list(nicknames.keys()):
+            if not self._threads[nickname].is_alive():
+                logging.debug(f'Removing {nickname} from active clients')
+                del nicknames[nickname]
