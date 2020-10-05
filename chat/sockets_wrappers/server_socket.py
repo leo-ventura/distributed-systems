@@ -54,7 +54,6 @@ class ServerSocket(ListenerSocket):
 
             self._handle_response(c_sock, nicknames, response)
 
-
     def _handle_response(self, c_sock, nicknames, response):
         if protocol.first_interaction in response:
             self._handle_first_interaction(c_sock, nicknames, response[protocol.nick])
@@ -76,41 +75,57 @@ class ServerSocket(ListenerSocket):
 
     def _handle_list_clients(self, c_sock, nicknames):
         logging.info(f'Send active clients list')
+
         self._remove_inactive_clients(nicknames)
+
         payload = builder.build_list_clients_payload(nicknames)
         c_sock.sendall(payload)
 
     def _handle_new_p2p_conn(self, c_sock, nicknames, target_nickname):
-        logging.info(f'Creating new p2p connection to {target_nickname}')
+        logging.info(f'[p2p] Creating new p2p connection to {target_nickname}')
 
         if target_nickname in nicknames:
-            # create payload asking target nickname to act as a server
-            payload = builder.build_p2p_serve_request_payload(protocol.role.server)
-            c_sock_p2p_server = nicknames[target_nickname]
-            logging.debug(f'Sending {payload} to {c_sock_p2p_server}')
-            c_sock_p2p_server.sendall(payload)
-
-            # join thread to wait until it receives the response
-            response = self._read_response_from_shared_memory(target_nickname)
-
-            logging.debug(f'c_sock_p2p_server responded: {response}')
-            # forward ip and port to client of p2p connection
-            payload = builder.build_p2p_server_payload((
-                response[protocol.connection.ip],
-                response[protocol.connection.port]
-            ))
-            logging.debug(f'Sending {payload} to {c_sock.getsockname()}')
-            c_sock.sendall(payload)
+            self._handle_active_client(c_sock, nicknames, target_nickname)
         else:
             logging.error(f'Nickname {target_nickname} is not active')
-            # TODO handle not active message response
+            self._handle_not_active_client(c_sock, target_nickname)
+
+    def _handle_active_client(self, c_sock, nicknames, target_nickname):
+        response = self._send_server_request_to_target(nicknames, target_nickname)
+        self._send_target_info_to_client(c_sock, response)
+
+    def _send_server_request_to_target(self, nicknames, target_nickname):
+        # create payload asking target nickname to act as a server
+        payload = builder.build_p2p_serve_request_payload(protocol.role.server)
+        c_sock_p2p_server = nicknames[target_nickname]
+
+        logging.debug(f'[p2p] Sending {payload} to {c_sock_p2p_server}')
+        c_sock_p2p_server.sendall(payload)
+
+        # join thread to wait until it receives the response
+        response = self._read_response_from_shared_memory(target_nickname)
+        logging.debug(f'[p2p] c_sock_p2p_server responded: {response}')
+        return response
+
+    def _send_target_info_to_client(self, c_sock, response):
+        # forward ip and port to client of the p2p connection
+        payload = builder.build_p2p_server_payload((
+            response[protocol.connection.ip],
+            response[protocol.connection.port]
+        ))
+        logging.debug(f'[p2p] Sending {payload} to {c_sock.getsockname()}')
+        c_sock.sendall(payload)
+
+    def _handle_not_active_client(self, c_sock, nickname):
+        payload = builder.build_status_payload(nick=nickname, ok=False)
+
+        c_sock.sendall(payload)
 
     def _read_response_from_shared_memory(self, nickname):
         logging.debug(f'Shared data before wait join: {self._shared_data}')
         with self._can_read_response:
             self._can_read_response.wait()
 
-        with self._lock:
             logging.debug(f'Shared data after releasing join: {self._shared_data}')
             response = self._shared_data
             self._share_data = ""
