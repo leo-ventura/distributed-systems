@@ -6,26 +6,28 @@ import logging
 from chat.message.reader import decode_json, decode_size
 
 class SocketClosedError(Exception):
+    """ Custom error to raise when a socket is closed """
     pass
 
 def read_response(sock):
-    logging.debug(f'Reading response using {sock.getsockname()}')
+    """ Function responsible for reading the response of a specified socket """
+
     # first 4 bytes will always be the size of the payload to be read
-    logging.debug('Waiting at sock.recv(4)')
+    logging.debug('Waiting sock.recv(4)')
     payload_size = sock.recv(4)
-    logging.debug(f'Payload size: {payload_size}')
+
     try:
+        # decode how many bytes we need to read
+        # converting from network ordering to host ordering
         bytes_to_read = decode_size(payload_size)
         logging.debug(f'Bytes to read: {bytes_to_read}')
     except struct.error:
         raise SocketClosedError
 
-    logging.debug(f'Finished reading bytes response, reading JSON')
-
+    # build json string
     json_string = ""
     while bytes_to_read > 0:
         response = sock.recv(min(bytes_to_read, 4096))
-        logging.debug(f'response = sock.recv(): {response}')
         if not response:
             raise SocketClosedError
 

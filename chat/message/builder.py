@@ -5,16 +5,19 @@ import struct
 from chat import protocol
 
 def encode_size(size):
-    # size_network_ordered = socket.htonl(size)
+    """ Encode the size of the payload from host to network (big endian) """
     return struct.pack("!I", size)
 
 def encode_dict(json_dict):
+    """ Encode dictionary to json string, then byte encode it """
     return json.dumps(json_dict).encode('utf-8')
 
 def build_payload(json_dict):
-    byte_encoded_message = encode_dict(json_dict)
-    size_payload = encode_size(len(byte_encoded_message))
-    return size_payload + byte_encoded_message
+    """ Build the payload by encoding the dictionary, encoding its size
+    and then concatenating them to create the actual payload """
+    byte_encoded_json = encode_dict(json_dict)
+    size_payload = encode_size(len(byte_encoded_json))
+    return size_payload + byte_encoded_json
 
 def build_nickname_payload(nickname):
     nickname_dict = {
