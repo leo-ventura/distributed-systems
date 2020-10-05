@@ -1,4 +1,6 @@
 import logging
+import sys
+import os
 
 from socket import socket, AF_INET, SOCK_STREAM, MSG_WAITALL
 from threading import Thread
@@ -116,7 +118,16 @@ class ClientSocket:
 
         response = read_response(self._sock)
 
-        self._create_p2p_client(open_connections, response)
+        if protocol.connection.ip in response \
+            and protocol.connection.port in response:
+            self._create_p2p_client(open_connections, response)
+        elif protocol.status.ok in response \
+            and not response[protocol.status.ok]:
+            self._handle_p2p_inactive_client(response)
+
+    def _handle_p2p_inactive_client(self, response):
+        error = f'Cliente {response[protocol.nick]} não está ativo'
+        print_colored(colors.FAIL, error)
 
     def _create_p2p_client(self, open_connections, response):
         address = (response[protocol.connection.ip], response[protocol.connection.port])
@@ -129,9 +140,8 @@ class ClientSocket:
         open_connections.append(connection)
 
     def interact_p2p(self):
-        # while True:
-        # read user message
         print_message_chat()
+        # TODO not allow input trigger ClientStdin in `select`
         msg = input()
         while not msg:
             error = "Não é possível enviar uma mensagem vazia, digite alguma coisa"
