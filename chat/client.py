@@ -31,7 +31,7 @@ def usage():
 
 
 def connect():
-    setup_logging(logging.DEBUG)
+    setup_logging(logging.ERROR)
     address = parse_arguments()
 
     # print usage
@@ -39,7 +39,7 @@ def connect():
 
     sock = ClientSocket(address)
 
-    # start first interaction
+    # start first interaction,
     # handle nickname setup
     sock.first_interaction()
 
