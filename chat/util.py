@@ -38,21 +38,25 @@ def print_nicknames(nicknames, self_nickname=""):
                 print(formatted_output)
             index += 1
     else:
-        print(f"{colors.WARNING}Nenhum usuário ativo{colors.ENDC}")
+        print_colored(colors.WARNING, "Nenhum usuário ativo")
 
-def setup_logging(level=logging.DEBUG):
+def setup_logging(debug=False, level=logging.ERROR):
+    if debug:
+        level = logging.DEBUG
     logging.basicConfig(format=LOG_FORMAT, level=level)
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description='Basic echo server implementation')
+        description='Chat distribuído v1.0')
     parser.add_argument('--host', type=str, default='localhost',
                         help='Host', dest='host')
     parser.add_argument('-P', '--port', type=int, default=5000,
                         help='Port', dest='port')
+    parser.add_argument('-v', '--debug', default=False,
+                        action='store_true', help='Debug', dest='debug')
 
     args = parser.parse_args()
-    host = args.host
-    port = args.port
+    addr = (args.host, args.port)
+    debug = args.debug
 
-    return host, port
+    return addr, debug

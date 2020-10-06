@@ -13,8 +13,8 @@ from chat.sockets_wrappers.server_socket import ServerSocket
 from select import select
 
 def serve():
-    setup_logging(logging.INFO)
-    listenerAddress = parse_arguments()
+    listenerAddress, debug = parse_arguments()
+    setup_logging(debug=debug, level=logging.INFO)
 
     # setup server socket
     sock = ServerSocket(listenerAddress)

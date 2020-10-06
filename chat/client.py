@@ -32,8 +32,8 @@ def usage():
 
 
 def connect():
-    setup_logging(logging.ERROR)
-    address = parse_arguments()
+    address, debug = parse_arguments()
+    setup_logging(debug=debug)
 
     # print usage
     usage()
