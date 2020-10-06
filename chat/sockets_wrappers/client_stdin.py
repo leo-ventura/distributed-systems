@@ -2,10 +2,15 @@ import sys
 import logging
 
 class ClientStdinWrapper:
-    def __init__(self):
+    def __init__(self, can_read):
         self._stdin = sys.stdin
+        self._can_read = can_read
 
     def fileno(self):
+        # only allow `select` to return when _can_read is set
+        # by doing this, we can differentiate between writing a command
+        # or a message
+        self._can_read.wait()
         return self._stdin.fileno()
 
     def ready(self, open_connections):
