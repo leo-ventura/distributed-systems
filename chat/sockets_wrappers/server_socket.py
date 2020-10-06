@@ -134,6 +134,7 @@ class ServerSocket(ListenerSocket):
 
     def _handle_first_interaction(self, c_sock, nicknames, nickname):
         logging.info(f'First interaction, got nickname: {nickname}')
+        self._remove_inactive_clients(nicknames)
         if nickname in nicknames:
             status_payload = builder.build_status_payload(nickname, ok=False)
         else:
