@@ -5,6 +5,7 @@ import sys
 
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM
+from threading import Event
 
 import pathlib
 import sys
@@ -19,12 +20,12 @@ from chat import protocol
 
 def print_commands():
     for command in protocol.commands:
-        print(f'{command}:\t\t{protocol.commands[command]}')
+        print(f'{command:15}: {protocol.commands[command]}')
 
 def usage():
     print("Bem vindo ao Chat Distribuído v1.0")
     print("="*20)
-    print("Primeiro, digite um nickname para ser identificado")
+    print("Primeiro, digite um nickname para ser identificado (sem espaços em branco)")
     print("Depois, utilize os comandos para se comunicar com o servidor:")
     print_commands()
     print("="*20)
@@ -43,8 +44,13 @@ def connect():
     # handle nickname setup
     sock.first_interaction()
 
+    # condition object to only let the stdin be read
+    # when there's no command being processed
+    can_read_stdin = Event()
+    can_read_stdin.set()
+
     # setup sockets
-    stdin = ClientStdinWrapper()
+    stdin = ClientStdinWrapper(can_read_stdin)
 
     # input entries
     readers_descriptors = [sock, stdin]
@@ -67,7 +73,7 @@ def connect():
         if connections_closed:
             break
         elif command:
-            sock.send_command(open_connections, command)
+            sock.send_command(open_connections, command, can_read_stdin)
 
     sock.close()
 
