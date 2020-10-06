@@ -71,7 +71,7 @@ class ClientSocket:
                 print_colored(colors.FAIL, "Nickname já existente, tente novamente")
                 self.first_interaction()
 
-    def send_command(self, open_connections, command):
+    def send_command(self, open_connections, command, can_read_stdin):
         """ User sent a command via stdin, forward it to the server """
         command_arguments = command.split()
         action = command_arguments[0]
@@ -83,7 +83,7 @@ class ClientSocket:
             except IndexError:
                 print_colored(colors.WARNING, "Nenhum nickname fornecido, tente novamente")
             else:
-                self._send_connect_client_request(open_connections, nickname)
+                self._send_connect_client_request(open_connections, nickname, can_read_stdin)
         else:
             print_colored(colors.FAIL, "Comando inválido, tente novamente")
 
@@ -108,10 +108,10 @@ class ClientSocket:
 
         response = read_response(self._sock)
         active_clients = response[protocol.action.LIST_CLIENTS_FIELD]
-        print("Active clients:")
+        print("Clientes ativos:")
         print_nicknames(active_clients, self._nick)
 
-    def _send_connect_client_request(self, open_connections, nickname):
+    def _send_connect_client_request(self, open_connections, nickname, can_read_stdin):
         payload = builder.build_action_payload(protocol.action.CONNECT_CLIENT_FIELD,
             nickname)
         self._sock.sendall(payload)
@@ -120,7 +120,7 @@ class ClientSocket:
 
         if protocol.connection.ip in response \
             and protocol.connection.port in response:
-            self._create_p2p_client(open_connections, response)
+            self._create_p2p_client(open_connections, response, can_read_stdin)
         elif protocol.status.ok in response \
             and not response[protocol.status.ok]:
             self._handle_p2p_inactive_client(response)
@@ -129,19 +129,23 @@ class ClientSocket:
         error = f'Cliente {response[protocol.nick]} não está ativo'
         print_colored(colors.FAIL, error)
 
-    def _create_p2p_client(self, open_connections, response):
-        address = (response[protocol.connection.ip], response[protocol.connection.port])
+    def _create_p2p_client(self, open_connections, response, can_read_stdin):
+        try:
+            address = (response[protocol.connection.ip], response[protocol.connection.port])
 
-        client_p2p_socket = ClientSocket(address, nickname=self._nick)
+            client_p2p_socket = ClientSocket(address, nickname=self._nick)
 
-        connection = Thread(target=client_p2p_socket.interact_p2p)
-        connection.start()
+            connection = Thread(target=client_p2p_socket.interact_p2p, args=(can_read_stdin,))
+            connection.start()
 
-        open_connections.append(connection)
+            open_connections.append(connection)
+        except:
+            with can_read_stdin:
+                can_read_stdin.notify()
 
-    def interact_p2p(self):
+    def interact_p2p(self, can_read_stdin):
         print_message_chat()
-        # TODO not allow input trigger ClientStdin in `select`
+        can_read_stdin.clear()
         msg = input()
         while not msg:
             error = "Não é possível enviar uma mensagem vazia, digite alguma coisa"
@@ -155,6 +159,8 @@ class ClientSocket:
 
         shell_print()
 
+        can_read_stdin.set()
+
         self.close()
 
 def setup_nickname():
@@ -163,7 +169,10 @@ def setup_nickname():
 
 def get_user_nickname():
     print_colored(colors.OKBLUE, "Entre com um nome de usuário para sua sessão atual")
-    shell_print()
+    nickname_shell()
 
     nickname = input()
     return nickname
+
+def nickname_shell():
+    print_colored(colors.OKBLUE, "@", end="")
