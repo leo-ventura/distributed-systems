@@ -18,14 +18,14 @@ def shell_print():
     print("> ", end="", flush=True)
 
 def print_message_chat():
-    print(f"{colors.CYAN}[Você] #>{colors.ENDC}", end="", flush=True)
+    print(f"{colors.CYAN}[você] #>{colors.ENDC}", end="", flush=True)
 
 def print_received_message(nickname, message):
     print(f'{colors.OKBLUE}[@{nickname}]: {message}{colors.ENDC}')
     shell_print()
 
-def print_colored(color, string):
-    print(f'{color}{string}{colors.ENDC}')
+def print_colored(color, string, end="\n"):
+    print(f'{color}{string}{colors.ENDC}', end=end)
 
 def print_nicknames(nicknames, self_nickname=""):
     if nicknames:
