@@ -44,7 +44,6 @@ class ServerSocket(ListenerSocket):
         while True:
             try:
                 response = read_response(c_sock)
-                logging.debug(f'Read response: {response}')
             except SocketClosedError:
                 logging.debug(f'Socket {c_sock.getsockname()} has been closed')
                 break
@@ -55,17 +54,26 @@ class ServerSocket(ListenerSocket):
             self._handle_response(c_sock, nicknames, response)
 
     def _handle_response(self, c_sock, nicknames, response):
+        """ Call handler for each specific response """
+
+        # first interaction with the client
         if protocol.first_interaction in response:
             self._handle_first_interaction(c_sock, nicknames, response[protocol.nick])
+
+        # there was some action requested from the client
         elif protocol.action_field in response:
-            # user requested some type of action
+            # client requested a list of active clients
             if protocol.action.LIST_CLIENTS_FIELD in response[protocol.action_field]:
                 self._handle_list_clients(c_sock, nicknames)
+
+            # client requested to connect to another client
             elif protocol.action.CONNECT_CLIENT_FIELD in response[protocol.action_field]:
                 self._handle_new_p2p_conn(c_sock, nicknames, response[protocol.nick])
         elif protocol.connection.ip in response and protocol.connection.port in response:
             # p2p connection has been created
-            # put data in the shared memory so that the main thread can pick it up
+            # and the clients responded with its ip and port
+            # we now must forward this information to the client wishing to chat
+            # put data in the shared memory and let the main thread pick it up
             with self._can_read_response:
                 self._shared_data = response
                 self._can_read_response.notify()
@@ -73,7 +81,21 @@ class ServerSocket(ListenerSocket):
             # go back to the keep alive loop
             self._keep_alive(c_sock, nicknames)
 
+    def _handle_first_interaction(self, c_sock, nicknames, nickname):
+        """ Handle first interaction from client, setup nickname, if available """
+        logging.info(f'First interaction, got nickname: {nickname}')
+        self._remove_inactive_clients(nicknames)
+        if nickname in nicknames:
+            status_payload = builder.build_status_payload(nickname, ok=False)
+        else:
+            self._atomic_update_nicknames(nicknames, nickname, c_sock)
+            status_payload = builder.build_status_payload(nickname)
+
+        logging.debug(f'Sending status payload: {status_payload}')
+        c_sock.sendall(status_payload)
+
     def _handle_list_clients(self, c_sock, nicknames):
+        """ Handle request to list active clients """
         logging.info(f'Send active clients list')
 
         self._remove_inactive_clients(nicknames)
@@ -82,6 +104,7 @@ class ServerSocket(ListenerSocket):
         c_sock.sendall(payload)
 
     def _handle_new_p2p_conn(self, c_sock, nicknames, target_nickname):
+        """ Handle request to chat with another client """
         logging.info(f'[p2p] Creating new p2p connection to {target_nickname}')
 
         if target_nickname in nicknames:
@@ -91,10 +114,12 @@ class ServerSocket(ListenerSocket):
             self._handle_not_active_client(c_sock, target_nickname)
 
     def _handle_active_client(self, c_sock, nicknames, target_nickname):
+        """ Handle request to chat with another client, knowing it is active """
         response = self._send_server_request_to_target(nicknames, target_nickname)
         self._send_target_info_to_client(c_sock, response)
 
     def _send_server_request_to_target(self, nicknames, target_nickname):
+        """ Send request to target client, asking it to open a server socket """
         # create payload asking target nickname to act as a server
         payload = builder.build_p2p_serve_request_payload(protocol.role.server)
         c_sock_p2p_server = nicknames[target_nickname]
@@ -108,6 +133,10 @@ class ServerSocket(ListenerSocket):
         return response
 
     def _send_target_info_to_client(self, c_sock, response):
+        """ The target client has created a socket and it is waiting for connections
+            Send ip and port back to client who requested the chat,
+            so it can connect to the target client separately
+        """
         # forward ip and port to client of the p2p connection
         payload = builder.build_p2p_server_payload((
             response[protocol.connection.ip],
@@ -117,11 +146,12 @@ class ServerSocket(ListenerSocket):
         c_sock.sendall(payload)
 
     def _handle_not_active_client(self, c_sock, nickname):
+        """ Handle peer-to-peer request for an inactive/inexistent client """
         payload = builder.build_status_payload(nick=nickname, ok=False)
-
         c_sock.sendall(payload)
 
     def _read_response_from_shared_memory(self, nickname):
+        """ Read response information from shared_data """
         logging.debug(f'Shared data before wait join: {self._shared_data}')
         with self._can_read_response:
             self._can_read_response.wait()
@@ -132,19 +162,8 @@ class ServerSocket(ListenerSocket):
 
         return response
 
-    def _handle_first_interaction(self, c_sock, nicknames, nickname):
-        logging.info(f'First interaction, got nickname: {nickname}')
-        self._remove_inactive_clients(nicknames)
-        if nickname in nicknames:
-            status_payload = builder.build_status_payload(nickname, ok=False)
-        else:
-            self._atomic_update_nickname(nicknames, nickname, c_sock)
-            status_payload = builder.build_status_payload(nickname)
-
-        logging.debug(f'Sending status payload: {status_payload}')
-        c_sock.sendall(status_payload)
-
-    def _atomic_update_nickname(self, nicknames, nickname, c_sock):
+    def _atomic_update_nicknames(self, nicknames, nickname, c_sock):
+        """ Atomicaly update nicknames list """
         with self._lock:
             logging.debug(f'Adding {nickname}')
             nicknames[nickname] = c_sock
@@ -154,6 +173,7 @@ class ServerSocket(ListenerSocket):
             logging.debug(f'Threads: {self._threads}')
 
     def _remove_inactive_clients(self, nicknames):
+        """ Remove inactive clients from list if their thread is not active """
         logging.debug(f'Threads: {self._threads.keys()}')
         for nickname in list(nicknames.keys()):
             if not self._threads[nickname].is_alive():
