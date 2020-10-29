@@ -10,6 +10,8 @@ import math
 import grpc
 import node_pb2
 import node_pb2_grpc
+import client_pb2
+import client_pb2_grpc
 
 HASH_SIZE = 160
 
@@ -40,7 +42,7 @@ class Node(NodeServicer):
         self.init_rpc_server()
 
     """ Methods to handle gRPC """
-    def Lookup(self, request, context) -> node_pb2.LookupReply:
+    def Lookup(self, request, context) -> node_pb2.Empty:
         """ RPC lookup """
         print(f'Passando pelo nó {self.node_id}')
         key: str = request.key
@@ -52,23 +54,39 @@ class Node(NodeServicer):
             except KeyError:
                 value = ""
             finally:
-                return node_pb2.LookupReply(node_id=self.node_id, value=value)
+                with grpc.insecure_channel(f'localhost:{request.client_port}') as channel:
+                    client_stub: client_pb2_grpc.ClientStub = client_pb2_grpc.ClientStub(channel)
+                    _ = client_stub.ClientLookupReply(node_pb2.LookupReply(
+                        node_id=self.node_id,
+                        key=key,
+                        value=value
+                    ))
+                    return node_pb2.Empty()
 
         finger_index: int = self.closest_preceding_finger(hash_)
         stub: node_pb2_grpc.NodeStub = self.finger_table[finger_index].stub
         return stub.Lookup(request)
 
-    def Insert(self, request, context) -> node_pb2.InsertReply:
+    def Insert(self, request, context) -> node_pb2.Empty:
         """ RPC Insert """
         print(f'Passando pelo nó {self.node_id}')
         key: str = request.key
         hash_: int = self.hash_key(key)
 
         if self.is_id_at_current_node(hash_):
-            print(f'Inserindo valor "{request.value}" identificado pela chave "{key}", com hash {hash_}, no nó {self.node_id}')
-            self.hash_table[key] = request.value
-            return node_pb2.InsertReply(
-                node_insert=self.node_id)
+            value: str = request.value
+            print(f'Inserindo valor "{value}" identificado pela chave "{key}", com hash {hash_}, no nó {self.node_id}')
+            self.hash_table[key] = value
+
+            with grpc.insecure_channel(f'localhost:{request.client_port}') as channel:
+                client_stub: client_pb2_grpc.ClientStub = client_pb2_grpc.ClientStub(channel)
+                _ = client_stub.ClientInsertReply(node_pb2.InsertReply(
+                    node_insert=self.node_id,
+                    key=key,
+                    value=value
+                ))
+
+                return node_pb2.Empty()
 
         print(f'Procurando pela hash {hash_}')
         print(f'Finger table: {list(self.finger_table)}')
@@ -78,8 +96,7 @@ class Node(NodeServicer):
 
     def init_rpc_server(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
-        add_NodeServicer_to_server(
-            self, server)
+        add_NodeServicer_to_server(self, server)
         server.add_insecure_port(f'localhost:{self.port}')
         server.start()
         server.wait_for_termination()
