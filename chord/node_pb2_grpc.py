@@ -17,12 +17,12 @@ class NodeStub(object):
         self.Insert = channel.unary_unary(
                 '/Node/Insert',
                 request_serializer=node__pb2.InsertRequest.SerializeToString,
-                response_deserializer=node__pb2.InsertReply.FromString,
+                response_deserializer=node__pb2.Empty.FromString,
                 )
         self.Lookup = channel.unary_unary(
                 '/Node/Lookup',
                 request_serializer=node__pb2.LookupRequest.SerializeToString,
-                response_deserializer=node__pb2.LookupReply.FromString,
+                response_deserializer=node__pb2.Empty.FromString,
                 )
 
 
@@ -47,12 +47,12 @@ def add_NodeServicer_to_server(servicer, server):
             'Insert': grpc.unary_unary_rpc_method_handler(
                     servicer.Insert,
                     request_deserializer=node__pb2.InsertRequest.FromString,
-                    response_serializer=node__pb2.InsertReply.SerializeToString,
+                    response_serializer=node__pb2.Empty.SerializeToString,
             ),
             'Lookup': grpc.unary_unary_rpc_method_handler(
                     servicer.Lookup,
                     request_deserializer=node__pb2.LookupRequest.FromString,
-                    response_serializer=node__pb2.LookupReply.SerializeToString,
+                    response_serializer=node__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -77,7 +77,7 @@ class Node(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Node/Insert',
             node__pb2.InsertRequest.SerializeToString,
-            node__pb2.InsertReply.FromString,
+            node__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -94,6 +94,6 @@ class Node(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Node/Lookup',
             node__pb2.LookupRequest.SerializeToString,
-            node__pb2.LookupReply.FromString,
+            node__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

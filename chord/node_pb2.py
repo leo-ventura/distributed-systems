@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\nnode.proto\">\n\rInsertRequest\x12\x11\n\tno_origem\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\"\n\x0bInsertReply\x12\x13\n\x0bnode_insert\x18\x01 \x01(\x03\"/\n\rLookupRequest\x12\x11\n\tno_origem\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\"-\n\x0bLookupReply\x12\x0f\n\x07node_id\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\t2Z\n\x04Node\x12(\n\x06Insert\x12\x0e.InsertRequest\x1a\x0c.InsertReply\"\x00\x12(\n\x06Lookup\x12\x0e.LookupRequest\x1a\x0c.LookupReply\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\nnode.proto\"U\n\rInsertRequest\x12\x13\n\x0bnode_origin\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x12\x13\n\x0b\x63lient_port\x18\x04 \x01(\x03\">\n\x0bInsertReply\x12\x13\n\x0bnode_insert\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"F\n\rLookupRequest\x12\x13\n\x0bnode_origin\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x13\n\x0b\x63lient_port\x18\x03 \x01(\x03\":\n\x0bLookupReply\x12\x0f\n\x07node_id\x18\x01 \x01(\x03\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\x07\n\x05\x45mpty2N\n\x04Node\x12\"\n\x06Insert\x12\x0e.InsertRequest\x1a\x06.Empty\"\x00\x12\"\n\x06Lookup\x12\x0e.LookupRequest\x1a\x06.Empty\"\x00\x62\x06proto3'
 )
 
 
@@ -34,7 +34,7 @@ _INSERTREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='no_origem', full_name='InsertRequest.no_origem', index=0,
+      name='node_origin', full_name='InsertRequest.node_origin', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -54,6 +54,13 @@ _INSERTREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='client_port', full_name='InsertRequest.client_port', index=3,
+      number=4, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -67,7 +74,7 @@ _INSERTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=14,
-  serialized_end=76,
+  serialized_end=99,
 )
 
 
@@ -86,41 +93,16 @@ _INSERTREPLY = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=78,
-  serialized_end=112,
-)
-
-
-_LOOKUPREQUEST = _descriptor.Descriptor(
-  name='LookupRequest',
-  full_name='LookupRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
     _descriptor.FieldDescriptor(
-      name='no_origem', full_name='LookupRequest.no_origem', index=0,
-      number=1, type=3, cpp_type=2, label=1,
-      has_default_value=False, default_value=0,
+      name='key', full_name='InsertReply.key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='key', full_name='LookupRequest.key', index=1,
-      number=2, type=9, cpp_type=9, label=1,
+      name='value', full_name='InsertReply.value', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -137,8 +119,54 @@ _LOOKUPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=114,
-  serialized_end=161,
+  serialized_start=101,
+  serialized_end=163,
+)
+
+
+_LOOKUPREQUEST = _descriptor.Descriptor(
+  name='LookupRequest',
+  full_name='LookupRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_origin', full_name='LookupRequest.node_origin', index=0,
+      number=1, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='key', full_name='LookupRequest.key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='client_port', full_name='LookupRequest.client_port', index=2,
+      number=3, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=165,
+  serialized_end=235,
 )
 
 
@@ -158,8 +186,15 @@ _LOOKUPREPLY = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='LookupReply.value', index=1,
+      name='key', full_name='LookupReply.key', index=1,
       number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='LookupReply.value', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -176,14 +211,40 @@ _LOOKUPREPLY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=163,
-  serialized_end=208,
+  serialized_start=237,
+  serialized_end=295,
+)
+
+
+_EMPTY = _descriptor.Descriptor(
+  name='Empty',
+  full_name='Empty',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=297,
+  serialized_end=304,
 )
 
 DESCRIPTOR.message_types_by_name['InsertRequest'] = _INSERTREQUEST
 DESCRIPTOR.message_types_by_name['InsertReply'] = _INSERTREPLY
 DESCRIPTOR.message_types_by_name['LookupRequest'] = _LOOKUPREQUEST
 DESCRIPTOR.message_types_by_name['LookupReply'] = _LOOKUPREPLY
+DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 InsertRequest = _reflection.GeneratedProtocolMessageType('InsertRequest', (_message.Message,), {
@@ -214,6 +275,13 @@ LookupReply = _reflection.GeneratedProtocolMessageType('LookupReply', (_message.
   })
 _sym_db.RegisterMessage(LookupReply)
 
+Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
+  'DESCRIPTOR' : _EMPTY,
+  '__module__' : 'node_pb2'
+  # @@protoc_insertion_point(class_scope:Empty)
+  })
+_sym_db.RegisterMessage(Empty)
+
 
 
 _NODE = _descriptor.ServiceDescriptor(
@@ -223,8 +291,8 @@ _NODE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=210,
-  serialized_end=300,
+  serialized_start=306,
+  serialized_end=384,
   methods=[
   _descriptor.MethodDescriptor(
     name='Insert',
@@ -232,7 +300,7 @@ _NODE = _descriptor.ServiceDescriptor(
     index=0,
     containing_service=None,
     input_type=_INSERTREQUEST,
-    output_type=_INSERTREPLY,
+    output_type=_EMPTY,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
@@ -242,7 +310,7 @@ _NODE = _descriptor.ServiceDescriptor(
     index=1,
     containing_service=None,
     input_type=_LOOKUPREQUEST,
-    output_type=_LOOKUPREPLY,
+    output_type=_EMPTY,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
