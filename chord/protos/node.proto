@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+service Node {
+    rpc Insert(InsertRequest) returns (InsertReply) {}
+    rpc Lookup(LookupRequest) returns (LookupReply) {}
+}
+
+message InsertRequest {
+    int64 no_origem = 1;
+    string key = 2;
+    string value = 3;
+}
+
+message InsertReply {
+    int64 node_insert = 1;
+}
+
+message LookupRequest {
+    int64 no_origem = 1;
+    string key = 2;
+}
+
+message LookupReply {
+    int64 node_id = 1;
+    string value = 2;
+}
