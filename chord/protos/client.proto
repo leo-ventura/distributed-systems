@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+import "node.proto";
+
+service Client {
+    rpc ClientLookupReply(LookupReply) returns (Empty) {}
+    rpc ClientInsertReply(InsertReply) returns (Empty) {}
+}
