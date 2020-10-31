@@ -20,10 +20,7 @@ class Node(NodeServicer):
         Class representing a Node in the Chord ring
     """
     def __init__(self, n: int, node_id: int, port: int) -> None:
-        print(f'Criando nó com argumentos:')
-        print(f'n: {n:<10}')
-        print(f'node_id: {node_id:<10}')
-        print(f'port: {port:<10}')
+        print(f'Criando nó com node_id: {node_id}')
         self.n: int = n
         self.node_id: int = node_id
         self.port: int = port
