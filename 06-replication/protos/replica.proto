@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+service Replica {
+    rpc RequestHat(HatRequest) returns (HatReply) {}
+    rpc UpdateCopy(UpdateCopyRequest) returns (UpdateCopyReply) {}
+}
+
+message HatRequest {
+    int32 node = 1;
+}
+
+message HatReply {
+    int32 node = 1;
+    bool was_primary = 2;
+}
+
+message UpdateCopyRequest {
+    int32 node = 1;
+    int32 x = 2;
+}
+
+message UpdateCopyReply {
+    int32 node = 1;
+}
+
+message Empty {}
