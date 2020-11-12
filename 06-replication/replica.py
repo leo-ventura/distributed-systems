@@ -208,6 +208,8 @@ def print_help():
     print_colored(colors.green, "\t w <x>:   escreve o valor <x> na varíavel X")
     print_colored(colors.green, "\t r:       lê o valor da varíavel X na cópia")
     print_colored(colors.green, "\t h:       printa histórico de mudanças na cópia")
+    print_colored(colors.green, "\t c:       commita as mudanças fazendo broadcast para as outras cópias")
+    print_colored(colors.green, "\t stop:    para o servidor (pode ser parado com ctrl-d também)")
 
 def read_node_id():
     node:str = input("Entre o id do servidor atual: ")
