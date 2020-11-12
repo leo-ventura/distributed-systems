@@ -1,7 +1,7 @@
 from concurrent import futures
 from threading import Thread, Event
 
-from typing import List, Dict, NamedTuple
+from typing import List, Dict, NamedTuple, Tuple
 from util import print_colored, shell_print, colors
 
 import grpc
@@ -45,9 +45,9 @@ class Replica(rep_grpc.ReplicaServicer):
         print_help()
 
     # RPC methods
-    def RequestHat(self, request, context):
+    def RequestHat(self, request, context) -> rep.HatReply:
         """ Handle hat request """
-        message = rep.HatReply(
+        message: rep.HatReply = rep.HatReply(
             node=self.node_id,
             was_primary=self.is_primary
         )
@@ -57,14 +57,14 @@ class Replica(rep_grpc.ReplicaServicer):
         self.is_primary = False
         return message
 
-    def UpdateCopy(self, request, context):
+    def UpdateCopy(self, request, context) -> rep.UpdateCopyReply:
         """ Update variable x and history of changes """
         self.X = request.x
         self.insert_history_record(request.node, request.x)
 
         return rep.UpdateCopyReply(node=self.node_id)
 
-    def run(self):
+    def run(self) -> None:
         """ Main method, initialize server interaction """
 
         while True:
@@ -86,18 +86,18 @@ class Replica(rep_grpc.ReplicaServicer):
         self.shutdown_server()
 
     # User requested commands
-    def read_x(self):
+    def read_x(self) -> None:
         """ Read value x on current copy """
         print_colored(colors.green, f'X = {self.X}')
 
-    def read_history(self):
+    def read_history(self) -> None:
         """ Read history of changes of variable x """
         print_colored(colors.blue, "Histórico de mudanças")
         for entry in self.history:
             node_id, value = entry
             print_colored(colors.magenta, f'{node_id}: {value}')
 
-    def set_x(self, args: List[str]):
+    def set_x(self, args: List[str]) -> None:
         """ Write `value` to x """
         try:
             x: int = int(args[0])
@@ -129,7 +129,7 @@ class Replica(rep_grpc.ReplicaServicer):
                 else:
                     print(f'response: {response}')
 
-    def commit(self):
+    def commit(self) -> None:
         """ Replicate current value of x to other copies """
         if self.is_primary:
             for replica in self.replicas:
@@ -151,7 +151,7 @@ class Replica(rep_grpc.ReplicaServicer):
                 value=value
             ))
 
-    def read_command(self):
+    def read_command(self) -> Tuple[str, List[str]]:
         """ Read command and returns command and arguments """
         shell_print()
         cmd: str = ""
@@ -167,7 +167,7 @@ class Replica(rep_grpc.ReplicaServicer):
         return cmd, args
 
 
-    def init_replicas(self):
+    def init_replicas(self) -> None:
         """ Initialize stubs to other servers """
         self.replicas: List[Stub] = []
 
@@ -200,7 +200,7 @@ class Replica(rep_grpc.ReplicaServicer):
         self.stop.set()
 
 
-def print_help():
+def print_help() -> None:
     print_colored(colors.blue, "Protocolo de replicação primária com cópia local")
     print_colored(colors.blue, "="*20)
     print_colored(colors.blue, "Comandos disponíveis:")
@@ -211,7 +211,7 @@ def print_help():
     print_colored(colors.green, "\t c:       commita as mudanças fazendo broadcast para as outras cópias")
     print_colored(colors.green, "\t stop:    para o servidor (pode ser parado com ctrl-d também)")
 
-def read_node_id():
+def read_node_id() -> int:
     node:str = input("Entre o id do servidor atual: ")
     try:
         node_id: int = int(node)
