@@ -22,5 +22,3 @@ message UpdateCopyRequest {
 message UpdateCopyReply {
     int32 node = 1;
 }
-
-message Empty {}
